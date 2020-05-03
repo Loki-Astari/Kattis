@@ -15,86 +15,81 @@ static int const result[4][4] = {
 
 int main()
 {
-     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    //std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
     std::ios_base::sync_with_stdio(false);
-#ifndef NO_TIE
-    std::cin.tie(nullptr);
-#endif
+    //    std::cin.tie(nullptr);
 
     struct T {
         int wins = 0;
         int loss = 0;
     };
+    std::vector<char>   data(5'000);
+    std::size_t max = fread(&data[0], 1, 5'000, stdin);
+    //fprintf(stdout, "Read: %lu: %c %c\n", max, data[0], data[2]);
 
+    char* buffer = &data[0];
+    buffer[max] = '\0';
+    char* theend = buffer + max;
+    int   size;
 
     char lineBreak[] = "\0";
     while (true)
     {
         int n = 0;
-#ifdef USE_SCANF
-        fscanf(stdin, " %d", &n);
-#else
-        std::cin >> n;
-#endif
+        sscanf(buffer, " %d%n", &n, &size);
+        buffer += size;
 
-        if (n == 0) {
+        if (n == 0 || buffer >= theend) {
             break;
         }
 
         int k;
-#ifdef USE_SCANF
-        if (fscanf(stdin, " %d", &k) == 1)
-#else
-            if (std::cin >> k)
-#endif
-            {
-                std::vector<T> games(n);
+        if (sscanf(buffer, " %d%n", &k, &size) == 1)
+        {
+            //fprintf(stdout, "Doing: %d => %d\n", n, k);
+            buffer += size;
+            std::vector<T> games(n);
 
-                std::cout << lineBreak;
-                lineBreak[0] = '\n';
+            fprintf(stdout, "%s", lineBreak);
+            lineBreak[0] = '\n';
 
-                for (int gameCount = (k * n * (n -1))/2; gameCount; --gameCount) {
-                    int         p1;
-                    int         p2;
-#ifdef USE_SCANF
-                    char        n1[20];
-                    char        n2[20];
-                    if (fscanf(stdin, " %d %s %d %s", &p1, n1, &p2, n2) == 4)
-#else
-                    std::string n1;
-                    std::string n2;
-
-                    if (std::cin >> p1 >> n1 >> p2 >> n2)
-#endif
-                    {
-                        p1--;
-                        p2--;
-
-                        int v = result[n1[0] & 3][n2[0] & 3];
-                        //std::cout << p1 << " " << n1 << " V " << p2 << " " << n2 << " => " << v << "\n";
-
-                        if (v != 0)
-                        {
-                            games[(v == 1) ? p1 : p2].wins++;
-                            games[(v == 1) ? p2 : p1].loss++;
-                        }
-                    }
-                }
-
-                std::cout << std::fixed;
-                std::cout << std::setprecision(3);
-                for (auto const& game: games)
+            for (int gameCount = (k * n * (n -1))/2; gameCount; --gameCount) {
+                //fprintf(stdout, "GC: %d\n", gameCount);
+                int         p1;
+                int         p2;
+                char        n1[20];
+                char        n2[20];
+                if (sscanf(buffer, " %d %s %d %s%n", &p1, n1, &p2, n2, &size) == 4)
                 {
-                    int numOfWins  = game.wins;
-                    int numOfGames = game.wins + game.loss;
-                    if (numOfGames != 0) {
-                        std::cout << (1.0 * numOfWins / numOfGames) << "\n";
-                    } else {
-                        std::cout << "-\n";
+                    //fprintf(stdout, "%d %s V %d %s\n", p1, n1, p2, n2);
+                    buffer += size;
+
+                    p1--;
+                    p2--;
+
+                    int v = result[n1[0] & 3][n2[0] & 3];
+
+                    if (v != 0)
+                    {
+                        games[(v == 1) ? p1 : p2].wins++;
+                        games[(v == 1) ? p2 : p1].loss++;
                     }
                 }
             }
+
+            for (auto const& game: games)
+            {
+                int numOfWins  = game.wins;
+                int numOfGames = game.wins + game.loss;
+                if (numOfGames != 0) {
+                    fprintf(stdout, "%.3f\n", (1.0 * numOfWins / numOfGames));
+                } else {
+                    fprintf(stdout, "-\n");
+                }
+            }
+        }
     }
-    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
+    //std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    //std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
 }
+
