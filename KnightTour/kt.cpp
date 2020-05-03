@@ -1,6 +1,21 @@
 #include <iostream>
 #include <tuple>
 #include <iomanip>
+#include <chrono>
+
+class Timer
+{
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    public:
+        Timer()
+            : start(std::chrono::high_resolution_clock::now())
+        {}
+        ~Timer()
+        {
+            std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+            std::cerr << "Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << "\n";
+        }
+};
 
 class FastInt
 {
@@ -33,12 +48,14 @@ class FastInt
 
 class Board
 {
-    int     row[8] = {0};
-    int     col[8] = {0};
+    int     row[8]      = {0};
+    int     rowCount[8] = {0};
+    int     col[8]      = {0};
+    int     colCount[8] = {0};
 
     int     board[8][8] = {0};
-    int     move[66] = {0};
-    int     count = 0;
+    int     move[66]    = {0};
+    int     count       = 0;
     static std::pair<int, int> constexpr pos[8] = {{-1, 2}, {1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}};
     public:
     Board(std::istream& str)
@@ -52,6 +69,8 @@ class Board
                     move[value] = loopY * 8 + loopX + 1;
                     row[loopY] += value;
                     col[loopX] += value;
+                    ++rowCount[loopY];
+                    ++colCount[loopX];
                 }
             }
         }
@@ -59,58 +78,112 @@ class Board
     }
     bool runTour()
     {
-        return runTour(1, (move[1] - 1) % 8, (move[1] - 1) / 8);
+        return runTour(1);
     }
     friend std::ostream& operator<<(std::ostream& str, Board const& data)
     {
         for (int loopX = 0;loopX < 8;++loopX) {
             for (int loopY = 0; loopY < 8;++loopY) {
-                str << std::setw(3) << data.board[loopX][loopY] << " ";
+                str << std::setw(2) << data.board[loopX][loopY] << " ";
             }
-            str << " => " << data.col[loopX] << "\n";
+            str << /*" => " << data.col[loopX] << */ "\n";
         }
-        str << "===============================\n";
-        for(int loopY = 0; loopY < 8;++loopY) {
-            str << std::setw(3) << data.row[loopY] << " ";
-        }
-        str << "\n\n";
+        /*
+           str << "===============================\n";
+           for(int loopY = 0; loopY < 8;++loopY) {
+           str << std::setw(3) << data.row[loopY] << " ";
+           }
+           str << "\n\n";
+         */
         //std::cerr << "Count: " << data.count << "\n";
         return str;
     }
     private:
     class BoardUpdate
     {
-        Board&  parent;
-        int     position;
-        int     x;
-        int     y;
-        bool    ok;
+        Board&      parent;
+        int         position;
+        int         x;
+        int         y;
+        bool        keep;
+        bool        valid;
         public:
-            BoardUpdate(Board& board, int position, int x, int y, bool ok = false)
-                : parent(board)
+            BoardUpdate(Board& parent, int position, int x, int y)
+                : parent(parent)
                 , position(position)
                 , x(x)
                 , y(y)
-                , ok(ok)
-            {
-                parent.board[x][y] = position;
-                parent.col[y] += position;
-                parent.row[x] += position;
+                , keep(true)
+                , valid(true)
+            {/*
+                Minimum
+                n                                                     n*(n-1)
+                1   0                                       p               0
+                2   0 + 2                                   2p  + 2         2
+                3   0 + 2 + 4                               3p  + 6         6
+                4   0 + 2 + 4 + 6                           4p  + 12        12
+                5   0 + 2 + 4 + 6 + 8                       5p  + 20        20
+                6   0 + 2 + 4 + 6 + 8 + 10                  6p  + 30        30
+                7   0 + 2 + 4 + 6 + 8 + 10 + 12             7p  + 42        42
+                8   0 + 2 + 4 + 6 + 8 + 10 + 12 +14         8p  + 56        56
+
+                Maximum
+                                                            (n-1)*(n-2)
+                1   p                                       0
+                2   p + 1.64                                0
+                3   p + 2.64 - 2                            2
+                4   p + 3.64 - 6                            6
+                5   p + 4.64 - 12                           12
+                6   p + 5.64 - 20                           20
+                7   p + 6.64 - 30                           30
+                8   p + 7.64 - 42                           42
+            */
+                if (parent.move[position] == 0) {
+
+                    int n;
+                    n = (8 - parent.rowCount[y]);
+                    int yMin    = n * position + n * (n - 1);
+                    int yMax    = position + (n - 1)*64 - (n - 1)*(n - 2);
+
+                    n  = (8 - parent.colCount[x]);
+                    int xMin    = n * position + n * (n - 1);
+                    int xMax    = position + (n - 1)*64 - (n - 1)*(n - 2);
+
+                    if ((parent.row[y] + yMin) > 260 || (parent.row[y] + yMax) < 260 || (parent.col[x] + xMin) > 260 || (parent.col[x] + xMax) < 260)
+                    {
+                        valid = false;
+                    }
+                    else
+                    {
+                        parent.board[x][y] = position;
+                        parent.row[y]  += position;
+                        parent.col[x]  += position;
+                        ++parent.rowCount[y];
+                        ++parent.colCount[x];
+                        keep  = false;
+                    }
+                }
             }
             void setOk()
             {
-                ok  = true;
+                keep = true;
+            }
+            explicit operator bool()
+            {
+                return valid;
             }
             ~BoardUpdate()
             {
-                if (!ok) {
+                if (!keep)
+                {
                     parent.board[x][y] = -1;
-                    parent.col[y] -= position;
-                    parent.row[x] -= position;
+                    parent.row[y]  -= position;
+                    parent.col[x]  -= position;
+                    --parent.rowCount[y];
+                    --parent.colCount[x];
                 }
             }
     };
-
     bool runTour(int position, int x, int y)
     {
         ++count;
@@ -134,24 +207,34 @@ class Board
         int nextSquare = move[position + 1];
         if (nextSquare != 0) {
             --nextSquare;
-            BoardUpdate     update(*this, position, x, y, true);
-            return runTour(position + 1, nextSquare % 8, nextSquare / 8);
-        }
-        else
-        //if (((move[position] == 0 || move[position] == y * 8 + x)) && (board[x][y] == -1 || board[x][y] == position))
-        {
-            if ((move[position] == 0) && ((row[y] + position) > 260 || (col[x] + position) > 260)) {
+            int newX    = nextSquare % 8;
+            int newY    = nextSquare / 8;
+            if (std::abs((x - newX) * (y - newY)) != 2) {
                 return false;
             }
+            BoardUpdate   update(*this, position, x, y);
+            //std::cout << "P: " << position << " => " << (position + 1) << " NS: " << nextSquare << " [" << (nextSquare % 8) << ", " << (nextSquare / 8) << "]\n";
+
+            if (update && runTour(position + 1)) {
+                update.setOk();
+                return true;
+            }
+            return false;;
+        }
+        else
+        {
             for (auto const& n: pos) {
-                BoardUpdate     update(*this, position, x, y);
                 int newX = x + std::get<0>(n);
                 int newY = y + std::get<1>(n);
                 if (newX < 0 || newX >=8 || newY < 0 || newY >= 8) {
                     continue;
                 }
+                if (position != 64 && board[newX][newY] != -1 && board[newX][newY] != (position + 1)) {
+                    continue;
+                }
+                BoardUpdate   update(*this, position, x, y);
                 //std::cout << "POS: " << position << "\n" << (*this) << "\n\n";
-                if (runTour(position + 1, newX, newY)) {
+                if (update && runTour(position + 1, newX, newY)) {
                     update.setOk();
                     return true;
                 }
@@ -159,10 +242,20 @@ class Board
         }
         return false;
     }
+    bool runTour(int position)
+    {
+        while (move[position + 1] != 0) {
+            ++position;
+        }
+
+        return runTour(position, (move[position] - 1) % 8, (move[position] - 1) / 8);
+    }
 };
 
 int main()
 {
+    Timer   timer;
+
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
     Board       board(std::cin);
@@ -173,8 +266,6 @@ int main()
         //std::cout << "After :\n";
         std::cout << board;
     }
-    else {
-        //std::cout << "Fail\n";
-    }
 }
+
 
