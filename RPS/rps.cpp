@@ -27,9 +27,94 @@ struct SimpleNum: public std::num_get<char>
     }
 };
 
+class FastInt
+{
+    int&    val;
+    public:
+        FastInt(int& v): val(v) {}
+
+#if 0
+        friend std::istream& operator>>(std::istream& str, FastInt const& data)
+        {
+            int c;
+            while (std::isspace(c = str.get()))
+            {}
+
+            data.val = c - '0';
+            while (std::isdigit(c = str.get())) {
+                data.val = (data.val * 10) + (c - '0');
+            }
+
+            return str;
+        }
+#else
+        friend std::istream& operator>>(std::istream& str, FastInt const& data)
+        {
+            std::istream::sentry sentry(str);
+
+            auto buf = str.rdbuf();
+
+            int c;/*
+            while (std::isspace(c = buf->sbumpc()))
+            {}*/
+
+            data.val = c - '0';
+            while (std::isdigit(c = buf->sbumpc())) {
+                data.val = (data.val * 10) + (c - '0');
+            }
+            //std::cerr << "Got: " << data.val << "\n";
+
+            return str;
+        }
+#endif
+};
+
+class FastString
+{
+    char*   val;
+    public:
+        FastString(char* v): val(v) {}
+
+#if 0
+        friend std::istream& operator>>(std::istream& str, FastString const& data)
+        {
+            int c;
+            while (std::isspace(c = str.get()))
+            {}
+
+            data.val[0] = c;
+            str.get(data.val + 1, 20, ' ');
+            str.get();
+            std::cerr << "X: " << data.val << "\n";
+
+            return str;
+        }
+#else
+        friend std::istream& operator>>(std::istream& str, FastString const& data)
+        {
+            std::istream::sentry sentry(str);
+            auto buf = str.rdbuf();
+
+            int c;/*
+            while (std::isspace(c = buf->sbumpc()))
+            {}*/
+
+            data.val[0] = c;
+            int loop = 1;
+            for (;!std::isspace(c = buf->sbumpc()); ++loop) {
+                data.val[loop] = c;
+            }
+            data.val[loop] = '\0';
+            //std::cerr << "Got: " << data.val << "\n";
+
+            return str;
+        }
+#endif
+};
+
 int main()
 {
-    std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    //std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 #ifndef USE_SCANF
 #if 0
     std::locale fast(std::locale::classic(), new SimpleNum);
@@ -52,7 +137,7 @@ int main()
     {
         int n = 0;
 #ifndef USE_SCANF
-        std::cin >> n;
+        std::cin >> FastInt(n);
 #else
         scanf(" %d", &n);
 #endif
@@ -63,7 +148,7 @@ int main()
 
         int k;
 #ifndef USE_SCANF
-        if (std::cin >> k)
+        if (std::cin >> FastInt(k))
 #else
         if (scanf(" %d", &k) == 1)
 #endif
@@ -84,7 +169,7 @@ int main()
                 char        n1[20];
                 char        n2[20];
 #ifndef USE_SCANF
-                if (std::cin >> p1 >> n1 >> p2 >> n2)
+                if (std::cin >> FastInt(p1) >> FastString(n1) >> FastInt(p2) >> FastString(n2))
 #else
                 if (scanf(" %d %s %d %s", &p1, n1, &p2, n2) == 4)
 #endif
@@ -122,8 +207,8 @@ int main()
             }
         }
     }
-    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    std::cerr << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
+    //std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    //std::cerr << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
 }
 
 
