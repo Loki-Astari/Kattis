@@ -1,12 +1,10 @@
 #include <iostream>
-#include <vector>
-#include <array>
-#include <iostream>
 #include <tuple>
 #include <iomanip>
 #include <chrono>
 #include <set>
 #include <tuple>
+#include <vector>
 
 int cells[17][4] = {
     {-1, -1, -1, -1},
@@ -76,7 +74,6 @@ CellRoutePair getRoute(int x, int y)
 {
     return getRoute(coordToSquare(x, y));
 }
-
 class Timer
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
@@ -184,9 +181,7 @@ class Board
     }
     bool runTour()
     {
-        bool result1 = runTourSquare(1);
-        bool result2 = result1 || runTourPoint(1);
-        return result1;
+        return runTourSquare(1) || runTour(1);
     }
     friend std::ostream& operator<<(std::ostream& str, Board const& data)
     {
@@ -203,7 +198,7 @@ class Board
            }
            str << "\n\n";
          */
-        //std::cout << "Count: " << data.count << "\n";
+        //std::cerr << "Count: " << data.count << "\n";
         /*
         for (int loopX = 0;loopX < 8;++loopX) {
             for (int loopY = 0; loopY < 8;++loopY) {
@@ -322,7 +317,7 @@ class Board
                 }
             }
     };
-    bool runTourPoint(int position, int x, int y)
+    bool runTour(int position, int x, int y)
     {
         ++count;
         if (position == 65) {
@@ -353,7 +348,7 @@ class Board
             BoardUpdate   update(*this, position, x, y);
             //std::cout << "P: " << position << " => " << (position + 1) << " NS: " << nextSquare << " [" << (nextSquare % 8) << ", " << (nextSquare / 8) << "]\n";
 
-            if (update && runTourPoint(position + 1)) {
+            if (update && runTour(position + 1)) {
                 update.setOk();
                 return true;
             }
@@ -380,7 +375,7 @@ class Board
             BoardUpdate   update(*this, position, x, y);
             for(auto const& n: next) {
                 //std::cout << "POS: " << position << "\n" << (*this) << "\n\n";
-                if (update && runTourPoint(position + 1, std::get<1>(n), std::get<2>(n))) {
+                if (update && runTour(position + 1, std::get<1>(n), std::get<2>(n))) {
                     update.setOk();
                     return true;
                 }
@@ -388,15 +383,15 @@ class Board
         }
         return false;
     }
-    bool runTourPoint(int position)
+    bool runTour(int position)
     {
         while (move[position + 1] != 0) {
             ++position;
         }
 
-        return runTourPoint(position, (move[position] - 1) % 8, (move[position] - 1) / 8);
+        return runTour(position, (move[position] - 1) % 8, (move[position] - 1) / 8);
     }
-    // ---------------------
+    // ----------
     bool runTourSquare(int currentMove)
     {
         return runTourSquare(currentMove, (move[currentMove] - 1) % 8, (move[currentMove] - 1) / 8);
@@ -471,9 +466,5 @@ int main()
         std::cout << board;
     }
 }
-
-
-
-
 
 
