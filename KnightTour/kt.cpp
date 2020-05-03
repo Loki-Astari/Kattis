@@ -78,7 +78,7 @@ class Board
     }
     bool runTour()
     {
-        return runTour(1);
+        return runTour(0, 0);
     }
     friend std::ostream& operator<<(std::ostream& str, Board const& data)
     {
@@ -115,53 +115,20 @@ class Board
                 , y(y)
                 , keep(true)
                 , valid(true)
-            {/*
-                Minimum
-                n                                                     n*(n-1)
-                1   0                                       p               0
-                2   0 + 2                                   2p  + 2         2
-                3   0 + 2 + 4                               3p  + 6         6
-                4   0 + 2 + 4 + 6                           4p  + 12        12
-                5   0 + 2 + 4 + 6 + 8                       5p  + 20        20
-                6   0 + 2 + 4 + 6 + 8 + 10                  6p  + 30        30
-                7   0 + 2 + 4 + 6 + 8 + 10 + 12             7p  + 42        42
-                8   0 + 2 + 4 + 6 + 8 + 10 + 12 +14         8p  + 56        56
-
-                Maximum
-                                                            (n-1)*(n-2)
-                1   p                                       0
-                2   p + 1.64                                0
-                3   p + 2.64 - 2                            2
-                4   p + 3.64 - 6                            6
-                5   p + 4.64 - 12                           12
-                6   p + 5.64 - 20                           20
-                7   p + 6.64 - 30                           30
-                8   p + 7.64 - 42                           42
-            */
-                if (parent.move[position] == 0) {
-
-                    int n;
-                    n = (8 - parent.rowCount[y]);
-                    int yMin    = n * position + n * (n - 1);
-                    int yMax    = position + (n - 1)*64 - (n - 1)*(n - 2);
-
-                    n  = (8 - parent.colCount[x]);
-                    int xMin    = n * position + n * (n - 1);
-                    int xMax    = position + (n - 1)*64 - (n - 1)*(n - 2);
-
-                    if ((parent.row[y] + yMin) > 260 || (parent.row[y] + yMax) < 260 || (parent.col[x] + xMin) > 260 || (parent.col[x] + xMax) < 260)
-                    {
-                        valid = false;
-                    }
-                    else
-                    {
-                        parent.board[x][y] = position;
-                        parent.row[y]  += position;
-                        parent.col[x]  += position;
-                        ++parent.rowCount[y];
-                        ++parent.colCount[x];
-                        keep  = false;
-                    }
+            {
+                if ((parent.row[y] + position) > 260 || (parent.col[x] + position) > 260)
+                {
+                    valid = false;
+                }
+                else
+                {
+                    parent.board[x][y] = position;
+                    parent.move[position] = y * 8 + x + 1;
+                    parent.row[y]  += position;
+                    parent.col[x]  += position;
+                    ++parent.rowCount[y];
+                    ++parent.colCount[x];
+                    keep  = false;
                 }
             }
             void setOk()
@@ -177,6 +144,7 @@ class Board
                 if (!keep)
                 {
                     parent.board[x][y] = -1;
+                    parent.move[position] = 0;
                     parent.row[y]  -= position;
                     parent.col[x]  -= position;
                     --parent.rowCount[y];
@@ -184,71 +152,33 @@ class Board
                 }
             }
     };
-    bool runTour(int position, int x, int y)
+    bool runTour(int loopX, int loopY)
     {
-        ++count;
-        if (position == 65) {
+        if (loopY == 8) {
+            loopY = 0;
+            ++loopX;
+        }
+        if (loopX == 8) {
             return true;
         }
+        //std::cout << "K: " << loopX << ", " << loopY << "\n";
 
-        //std::cout << "P: " << position << "  [" << x << ", " << y << "]\n";
-        if (move[position] != 0 && move[position] != (y * 8 + x) + 1) {
-            // Pre-defined position and we missed.
-            //std::cout << "\t F1\n";
-            return false;
+        if (board[loopX][loopY] != -1) {
+            return runTour(loopX, loopY+1);
         }
-
-        if (move[position] == 0 && board[x][y] != -1) {
-            // When searching only overwrite unused squares
-            //std::cout << "\t " <<  move[position] << " : " << board[x][y] << "  F2\n";
-            return false;
-        }
-
-        int nextSquare = move[position + 1];
-        if (nextSquare != 0) {
-            --nextSquare;
-            int newX    = nextSquare % 8;
-            int newY    = nextSquare / 8;
-            if (std::abs((x - newX) * (y - newY)) != 2) {
-                return false;
-            }
-            BoardUpdate   update(*this, position, x, y);
-            //std::cout << "P: " << position << " => " << (position + 1) << " NS: " << nextSquare << " [" << (nextSquare % 8) << ", " << (nextSquare / 8) << "]\n";
-
-            if (update && runTour(position + 1)) {
-                update.setOk();
-                return true;
-            }
-            return false;;
-        }
-        else
-        {
-            for (auto const& n: pos) {
-                int newX = x + std::get<0>(n);
-                int newY = y + std::get<1>(n);
-                if (newX < 0 || newX >=8 || newY < 0 || newY >= 8) {
+        else {
+            for(int p = 1; p < 65; ++p) {
+                if (move[p] != 0) {
                     continue;
                 }
-                if (position != 64 && board[newX][newY] != -1 && board[newX][newY] != (position + 1)) {
-                    continue;
-                }
-                BoardUpdate   update(*this, position, x, y);
-                //std::cout << "POS: " << position << "\n" << (*this) << "\n\n";
-                if (update && runTour(position + 1, newX, newY)) {
+                BoardUpdate     update(*this, p, loopX, loopY);
+                if (update && runTour(loopX, loopY + 1)) {
                     update.setOk();
                     return true;
                 }
             }
+            return false;
         }
-        return false;
-    }
-    bool runTour(int position)
-    {
-        while (move[position + 1] != 0) {
-            ++position;
-        }
-
-        return runTour(position, (move[position] - 1) % 8, (move[position] - 1) / 8);
     }
 };
 
