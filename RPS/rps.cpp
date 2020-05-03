@@ -13,80 +13,6 @@ static int const result[4][4] = {
 };
 
 
-static constexpr std::size_t bufferSize = 50'000;
-char                data[bufferSize + 1];
-char*               buffer  = data;
-char*               theend  = buffer;
-
-template<typename...T>
-inline
-bool getData1(char const* format, T... args)
-{
-    std::size_t size = 0;
-    if ((buffer == theend) || (sscanf(buffer, format, args..., &size) != sizeof...(T)) || (buffer + size >= theend))
-    {
-        size = theend - buffer;
-        std::copy(buffer, buffer + size, data);
-        std::size_t max = fread(data + size, 1, bufferSize - size, stdin);
-        max += size;
-        buffer = data;
-        buffer[max] = '\0';
-        theend = buffer + max;
-        if (sscanf(buffer, format, args..., &size) != sizeof...(T)) {
-            return false;
-        }
-    }
-    buffer += size;
-    return true;
-}
-
-template<typename...T>
-inline
-bool getData2(char const* format, T... args)
-{
-    std::size_t size = 0;
-    return fscanf(stdin, format, args..., &size) == sizeof...(T);
-}
-
-struct FastInt
-{
-    int&    val;
-    FastInt(int& v): val(v){}
-
-    friend std::istream& operator>>(std::istream& str, FastInt const& data)
-    {
-        char c;
-        while (std::isspace(c = str.get()))
-        {}
-
-        int val = c - '0';
-        for(c = str.get(); std::isdigit(c); c = str.get()) {
-            val = val * 10 + (c - '0');
-        }
-        data.val = val;
-        return str;
-    }
-};
-struct FastString
-{
-    char*    val;
-    FastString(char*& v): val(v){}
-    template<unsigned int N>
-    FastString(char (&v)[N]) :val(v) {}
-
-    friend std::istream& operator>>(std::istream& str, FastString const& data)
-    {
-        while (std::isspace(data.val[0] = str.get()))
-        {}
-
-        int loop = 1;
-        for(data.val[loop] = str.get(); !std::isspace(data.val[loop]); ++loop, data.val[loop] = str.get())
-        {}
-        data.val[loop] = '\0';
-        return str;
-    }
-};
-
 struct SimpleNum: public std::num_get<char>
 {
     using iter_type = num_get<char>::iter_type;
@@ -103,16 +29,18 @@ struct SimpleNum: public std::num_get<char>
 
 int main()
 {
-    //std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+#ifndef USE_SCANF
+#if 0
     std::locale fast(std::locale::classic(), new SimpleNum);
     std::cin.imbue(fast);
-    std::cout.imbue(fast);
-    std::cout << std::fixed
-              << std::setprecision(3);
-
+#endif
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
+#endif
 
+    std::cout << std::fixed
+              << std::setprecision(3);
 
     struct T {
         int wins = 0;
@@ -123,32 +51,43 @@ int main()
     while (true)
     {
         int n = 0;
-        // getData(" %d%n", &n);
+#ifndef USE_SCANF
         std::cin >> n;
+#else
+        scanf(" %d", &n);
+#endif
 
         if (n == 0) {
             break;
         }
 
         int k;
-        //if (getData(" %d%n", &k))
+#ifndef USE_SCANF
         if (std::cin >> k)
+#else
+        if (scanf(" %d", &k) == 1)
+#endif
         {
             std::vector<T> games(n);
 
-            //fprintf(stdout, "%s", lineBreak);
+#ifndef USE_SCANF
             std::cout << lineBreak;
+#else
+            printf("%s", lineBreak);
+#endif
             lineBreak[0] = '\n';
 
             for (int gameCount = (k * n * (n -1))/2; gameCount; --gameCount)
             {
-                //fprintf(stdout, "GC: %d\n", gameCount);
                 int         p1;
                 int         p2;
                 char        n1[20];
                 char        n2[20];
-                //if (getData(" %d %s %d %s%n", &p1, n1, &p2, n2))
+#ifndef USE_SCANF
                 if (std::cin >> p1 >> n1 >> p2 >> n2)
+#else
+                if (scanf(" %d %s %d %s", &p1, n1, &p2, n2) == 4)
+#endif
                 {
                     p1--;
                     p2--;
@@ -168,17 +107,23 @@ int main()
                 int numOfWins  = game.wins;
                 int numOfGames = game.wins + game.loss;
                 if (numOfGames != 0) {
-                    //fprintf(stdout, "%.3f\n", (1.0 * numOfWins / numOfGames));
+#ifndef USE_SCANF
                     std::cout << (1.0 * numOfWins / numOfGames) << "\n";
+#else
+                    printf("%0.3f\n", (1.0 * numOfWins / numOfGames));
+#endif
                 } else {
-                    //fprintf(stdout, "-\n");
+#ifndef USE_SCANG
                     std::cout << "-\n";
+#else
+                    printf("-\n";);
+#endif
                 }
             }
         }
     }
-    //std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    //std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
+    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    std::cerr << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
 }
 
 
