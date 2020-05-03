@@ -1,76 +1,9 @@
 #include "board.h"
+#include "squarediamond.h"
 
 
 using namespace ThorsAnvil::Contest::KnightTour;
 
-int cells[17][4] = {
-    {-1, -1, -1, -1},
-    { 1, 11, 28, 18},
-    { 2, 12, 27, 17},
-    { 3, 20, 26,  9},
-    { 4, 19, 25, 10},
-    { 5, 15, 32, 22},
-    { 6, 16, 31, 21},
-    { 7, 24, 30, 13},
-    { 8, 23, 29, 14},
-    {33, 43, 60, 50},
-    {34, 44, 59, 49},
-    {35, 52, 58, 41},
-    {36, 51, 57, 42},
-    {37, 47, 64, 54},
-    {38, 48, 63, 53},
-    {39, 56, 62, 45},
-    {40, 55, 61, 46}
-};
-
-int squreToCellData[65] = {
-    -1,
-     1,  2,  3,  4,  5,  6,  7,  8,
-     3,  4,  1,  2,  7,  8,  5,  6,
-     2,  1,  4,  3,  6,  5,  8,  7,
-     4,  3,  2,  1,  8,  7,  6,  5,
-     9, 10, 11, 12, 13, 14, 15, 16,
-    11, 12,  9, 10, 15, 16, 13, 14,
-    10,  9, 12, 11, 14, 13, 16, 15,
-    12, 11, 10,  9, 16, 15, 14, 13
-};
-
-int coordToSquare(int x, int y)
-{
-    return y * 8 + x + 1;
-}
-
-int squareToCell(int square)
-{
-    return squreToCellData[square];
-}
-
-using CellRoute     = std::vector<int>;
-using CellRoutePair = std::pair<CellRoute, CellRoute>;
-
-CellRoutePair getRoute(int square)
-{
-    int     cell    = squareToCell(square);
-    int*    cellPtr = cells[cell];
-
-    auto find   = std::find(cellPtr, cellPtr + 4, square);
-    auto offset = find - cellPtr;
-
-    std::vector<int>    r1(4);
-    std::vector<int>    r2(4);
-
-    for(int loop = 0; loop < 4; ++loop) {
-        r1[loop] = cellPtr[(4 + offset + loop) % 4];
-        r2[loop] = cellPtr[(4 + offset - loop) % 4];
-    }
-
-    return std::make_pair(r1, r2);
-}
-
-CellRoutePair getRoute(int x, int y)
-{
-    return getRoute(coordToSquare(x, y));
-}
 
 Board::Board(std::istream& str)
 {
@@ -111,20 +44,18 @@ Board::Board(std::istream& str)
 
 bool Board::runTour()
 {
-    return runTourSquare(1) || runTour(1);
+    SquareDiamond   sd(*this);
+
+    return sd.runTourSquare((move[1] - 1) % 8, (move[1] - 1) / 8) || runTour(1);
 }
 
-namespace ThorsAnvil::Contest::KnightTour
+void Board::print(std::ostream& str) const
 {
-    std::ostream& operator<<(std::ostream& str, Board const& data)
-    {
-        for (int loopX = 0;loopX < 8;++loopX) {
-            for (int loopY = 0; loopY < 8;++loopY) {
-                str << std::setw(2) << data.board[loopX][loopY] << " ";
-            }
-            str << "\n";
+    for (int loopX = 0;loopX < 8;++loopX) {
+        for (int loopY = 0; loopY < 8;++loopY) {
+            str << std::setw(2) << board[loopX][loopY] << " ";
         }
-        return str;
+        str << "\n";
     }
 }
 
@@ -295,26 +226,7 @@ bool Board::runTour(int position)
     return runTour(position, (move[position] - 1) % 8, (move[position] - 1) / 8);
 }
 
-// ----------
-
-bool Board::runTourSquare(int currentMove)
-{
-    return runTourSquare(currentMove, (move[currentMove] - 1) % 8, (move[currentMove] - 1) / 8);
-}
-
-bool Board::runTourSquare(int currentMove, int x, int y)
-{
-    if (currentMove == 65) {
-        return true;
-    }
-
-    int square = y * 8 + x + 1;
-    CellRoutePair routes = getRoute(square);
-
-    return runTourSquare(currentMove, std::get<0>(routes), 1, x, y) || runTourSquare(currentMove, std::get<1>(routes), 1, x, y);
-}
-
-bool Board::runTourSquare(int currentMove, std::vector<int> const& route, int routePos, int x, int y)
+bool Board::validMove(int currentMove, int x, int y) const
 {
     if (move[currentMove] != 0 && move[currentMove] != (y * 8 + x + 1)) {
         return false;
@@ -324,36 +236,6 @@ bool Board::runTourSquare(int currentMove, std::vector<int> const& route, int ro
         return false;
     }
 
-    BoardUpdate   update(*this, currentMove, x, y);
-    if (!update) {
-        return false;
-    }
-
-    if (routePos != 4)
-    {
-        int next = route[routePos];
-        int newX = (next - 1) % 8;
-        int newY = (next - 1) / 8;
-        if(runTourSquare(currentMove + 1, route, routePos + 1, newX, newY)) {
-            update.setOk();
-            return true;
-        }
-        return false;
-    }
-
-    for(auto const& p: pos) {
-        int newX = x + std::get<0>(p);
-        int newY = y + std::get<1>(p);
-
-        if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) {
-            continue;
-        }
-
-        if (runTourSquare(currentMove + 1, newX, newY)) {
-            update.setOk();
-            return true;
-        }
-    }
-    return false;
+    return true;
 }
 

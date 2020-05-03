@@ -40,10 +40,11 @@ class Board
     public:
         Board(std::istream& str);
         bool runTour();
+        void print(std::ostream& str) const;
 
-        friend std::ostream& operator<<(std::ostream& str, Board const& data);
+        friend std::ostream& operator<<(std::ostream& str, Board const& data) {data.print(str);return str;}
 
-    private:
+        bool validMove(int currentMove, int x, int y) const;
         class BoardUpdate
         {
             Board&      parent;
@@ -59,12 +60,9 @@ class Board
                 void setOk()                    {keep = true;}
                 explicit operator bool() const  {return valid;}
         };
+    private:
         bool runTour(int position, int x, int y);
         bool runTour(int position);
-        // ----------
-        bool runTourSquare(int currentMove);
-        bool runTourSquare(int currentMove, int x, int y);
-        bool runTourSquare(int currentMove, std::vector<int> const& route, int routePos, int x, int y);
 };
 
 }
