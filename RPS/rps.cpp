@@ -1,3 +1,4 @@
+#include "contest.h"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -12,114 +13,15 @@ static int const result[4][4] = {
     { 1, 0, -1,  0}      // scissors
 };
 
+using ThorsAnvil::Contest::Timer;
+using ThorsAnvil::Contest::FastInt;
+using ThorsAnvil::Contest::FastString;
 
-struct SimpleNum: public std::num_get<char>
-{
-    using iter_type = num_get<char>::iter_type;
-
-    iter_type do_get(iter_type in, iter_type end, std::ios_base& str, std::ios_base::iostate& err, long& val) const override
-    {
-        val = *in - '0';
-        for(++in; in != end && std::isdigit(*in); ++in) {
-            val = val * 10 + (*in - '0');
-        }
-        return in;
-    }
-};
-
-class FastInt
-{
-    int&    val;
-    public:
-        FastInt(int& v): val(v) {}
-
-#if 0
-        friend std::istream& operator>>(std::istream& str, FastInt const& data)
-        {
-            int c;
-            while (std::isspace(c = str.get()))
-            {}
-
-            data.val = c - '0';
-            while (std::isdigit(c = str.get())) {
-                data.val = (data.val * 10) + (c - '0');
-            }
-
-            return str;
-        }
-#else
-        friend std::istream& operator>>(std::istream& str, FastInt const& data)
-        {
-            std::istream::sentry sentry(str);
-
-            auto buf = str.rdbuf();
-
-            int c;/*
-            while (std::isspace(c = buf->sbumpc()))
-            {}*/
-
-            data.val = c - '0';
-            while (std::isdigit(c = buf->sbumpc())) {
-                data.val = (data.val * 10) + (c - '0');
-            }
-            //std::cerr << "Got: " << data.val << "\n";
-
-            return str;
-        }
-#endif
-};
-
-class FastString
-{
-    char*   val;
-    public:
-        FastString(char* v): val(v) {}
-
-#if 0
-        friend std::istream& operator>>(std::istream& str, FastString const& data)
-        {
-            int c;
-            while (std::isspace(c = str.get()))
-            {}
-
-            data.val[0] = c;
-            str.get(data.val + 1, 20, ' ');
-            str.get();
-            std::cerr << "X: " << data.val << "\n";
-
-            return str;
-        }
-#else
-        friend std::istream& operator>>(std::istream& str, FastString const& data)
-        {
-            std::istream::sentry sentry(str);
-            auto buf = str.rdbuf();
-
-            int c;/*
-            while (std::isspace(c = buf->sbumpc()))
-            {}*/
-
-            data.val[0] = c;
-            int loop = 1;
-            for (;!std::isspace(c = buf->sbumpc()); ++loop) {
-                data.val[loop] = c;
-            }
-            data.val[loop] = '\0';
-            //std::cerr << "Got: " << data.val << "\n";
-
-            return str;
-        }
-#endif
-};
 
 int main()
 {
-    //std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+    Timer       timer;
 #ifndef USE_SCANF
-#if 0
-    std::locale fast(std::locale::classic(), new SimpleNum);
-    std::cin.imbue(fast);
-#endif
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
 #endif
@@ -207,8 +109,6 @@ int main()
             }
         }
     }
-    //std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-    //std::cerr << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "\n";
 }
 
 

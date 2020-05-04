@@ -50,6 +50,33 @@ class FastInt
     }
 };
 
+class FastString
+{
+    char*   val;
+    public:
+        FastString(char* v): val(v) {}
+
+        friend std::istream& operator>>(std::istream& str, FastString const& data)
+        {
+            std::istream::sentry sentry(str);
+            auto buf = str.rdbuf();
+
+            int c;/*
+            while (std::isspace(c = buf->sbumpc()))
+            {}*/
+
+            data.val[0] = c;
+            int loop = 1;
+            for (;!std::isspace(c = buf->sbumpc()); ++loop) {
+                data.val[loop] = c;
+            }
+            data.val[loop] = '\0';
+            //std::cerr << "Got: " << data.val << "\n";
+
+            return str;
+        }
+};
+
 }
 
 #endif
