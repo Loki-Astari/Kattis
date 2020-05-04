@@ -1,4 +1,4 @@
-#include "../contest.h"
+#include "contest.h"
 #include "board.h"
 
 int main()

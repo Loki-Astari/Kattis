@@ -1,7 +1,7 @@
 #ifndef THORSANVIL_CONTEST_KNIGHTTOUR_BOARD_H
 #define THORSANVIL_CONTEST_KNIGHTTOUR_BOARD_H
 
-#include "../contest.h"
+#include "contest.h"
 
 namespace ThorsAnvil::Contest::KnightTour
 {
