@@ -2,6 +2,8 @@
 #include "squarediamond.h"
 #include "bruteforce.h"
 
+#include <iomanip>
+
 
 using namespace ThorsAnvil::Contest::KnightTour;
 
@@ -51,7 +53,7 @@ bool Board::runTour()
     int x = (move[1] - 1) % 8;
     int y = (move[1] - 1) / 8;
 
-    return sd.runTourSquare(x, y) || bf.runTour(x, y);
+    return sd.runTour(x, y) || bf.runTour(x, y);
 }
 
 void Board::print(std::ostream& str) const

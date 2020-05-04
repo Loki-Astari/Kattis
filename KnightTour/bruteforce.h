@@ -1,13 +1,7 @@
 #ifndef THORSANVIL_CONTEST_KNIGHTTOUR_BRUTEFORCE_H
 #define THORSANVIL_CONTEST_KNIGHTTOUR_BRUTEFORCE_H
 
-#include "../contest.h"
-#include <iostream>
-#include <tuple>
-#include <iomanip>
-#include <set>
-#include <tuple>
-#include <vector>
+#include <utility>
 
 namespace ThorsAnvil::Contest::KnightTour
 {

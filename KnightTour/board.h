@@ -2,12 +2,6 @@
 #define THORSANVIL_CONTEST_KNIGHTTOUR_BOARD_H
 
 #include "../contest.h"
-#include <iostream>
-#include <tuple>
-#include <iomanip>
-#include <set>
-#include <tuple>
-#include <vector>
 
 namespace ThorsAnvil::Contest::KnightTour
 {
