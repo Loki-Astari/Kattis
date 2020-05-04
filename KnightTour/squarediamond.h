@@ -59,7 +59,7 @@ class SquareDiamond
         CellRoutePair getRoute(int x, int y)    {return getRoute(coordToSquare(x, y));};
 
         CellRoutePair getRoute(int square);
-        // ----------
+
         bool runTourSquare(int currentMove, std::vector<int> const& route, int routePos, int x, int y);
         bool runTourSquare(int currentMove, int x, int y);
         bool runTourSquare(int currentMove);

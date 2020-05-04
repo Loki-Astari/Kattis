@@ -1,5 +1,6 @@
 #include "board.h"
 #include "squarediamond.h"
+#include "bruteforce.h"
 
 
 using namespace ThorsAnvil::Contest::KnightTour;
@@ -45,8 +46,12 @@ Board::Board(std::istream& str)
 bool Board::runTour()
 {
     SquareDiamond   sd(*this);
+    BruteForce      bf(*this);
 
-    return sd.runTourSquare((move[1] - 1) % 8, (move[1] - 1) / 8) || runTour(1);
+    int x = (move[1] - 1) % 8;
+    int y = (move[1] - 1) / 8;
+
+    return sd.runTourSquare(x, y) || bf.runTour(x, y);
 }
 
 void Board::print(std::ostream& str) const
@@ -150,92 +155,38 @@ Board::BoardUpdate::~BoardUpdate()
     }
 }
 
-bool Board::runTour(int position, int x, int y)
-{
-    ++count;
-    if (position == 65) {
-        return true;
-    }
-
-    //std::cout << "P: " << position << "  [" << x << ", " << y << "]\n";
-    if (move[position] != 0 && move[position] != (y * 8 + x) + 1) {
-        // Pre-defined position and we missed.
-        //std::cout << "\t F1\n";
-        return false;
-    }
-
-    if (move[position] == 0 && board[x][y] != -1) {
-        // When searching only overwrite unused squares
-        //std::cout << "\t " <<  move[position] << " : " << board[x][y] << "  F2\n";
-        return false;
-    }
-
-    int nextSquare = move[position + 1];
-    if (nextSquare != 0) {
-        --nextSquare;
-        int newX    = nextSquare % 8;
-        int newY    = nextSquare / 8;
-        if (std::abs((x - newX) * (y - newY)) != 2) {
-            return false;
-        }
-        BoardUpdate   update(*this, position, x, y);
-        //std::cout << "P: " << position << " => " << (position + 1) << " NS: " << nextSquare << " [" << (nextSquare % 8) << ", " << (nextSquare / 8) << "]\n";
-
-        if (update && runTour(position + 1)) {
-            update.setOk();
-            return true;
-        }
-        return false;;
-    }
-    else
-    {
-        std::set<std::tuple<int, int, int>>    next;
-        for (auto const& n: pos) {
-            int newX = x + std::get<0>(n);
-            int newY = y + std::get<1>(n);
-            if (newX < 0 || newX >=8 || newY < 0 || newY >= 8) {
-                continue;
-            }
-            if (position != 64 && board[newX][newY] != -1) {
-                continue;
-            }
-            int currQuad = y    / 4 * 2 + x    / 4;
-            int nextQuad = newY / 4 * 2 + newX / 4;
-            int stage    = ((position - 1) % 4) != 3 ? 0 : 1;
-            //next.emplace(priority[stage][currQuad][nextQuad], newX, newY);
-            next.emplace(priority[stage][currQuad][nextQuad] + 10 - Warnsdorff[newX][newY], newX, newY);
-        }
-        BoardUpdate   update(*this, position, x, y);
-        for(auto const& n: next) {
-            //std::cout << "POS: " << position << "\n" << (*this) << "\n\n";
-            if (update && runTour(position + 1, std::get<1>(n), std::get<2>(n))) {
-                update.setOk();
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool Board::runTour(int position)
-{
-    while (move[position + 1] != 0) {
-        ++position;
-    }
-
-    return runTour(position, (move[position] - 1) % 8, (move[position] - 1) / 8);
-}
-
 bool Board::validMove(int currentMove, int x, int y) const
 {
     if (move[currentMove] != 0 && move[currentMove] != (y * 8 + x + 1)) {
+        // Pre-defined position and we missed.
         return false;
     }
 
     if (move[currentMove] == 0 && board[x][y] != -1) {
+        // When searching only overwrite unused squares
         return false;
     }
 
     return true;
+}
+
+bool Board::getSquare(int checkMove, int& x, int& y) const
+{
+    int nextSquare = move[checkMove];
+    if (nextSquare != -1) {
+        x = (nextSquare - 1) % 8;
+        y = (nextSquare - 1) / 8;
+    }
+    return nextSquare == -1;
+}
+
+bool Board::moveEmpty(int checkMove) const
+{
+    return move[checkMove] != -1;
+}
+
+int Board::getInCount(int x, int y) const
+{
+    return Warnsdorff[x][y];
 }
 
