@@ -1,6 +1,8 @@
 #include "squarediamond.h"
 #include "board.h"
 
+#include <algorithm>
+
 
 using namespace ThorsAnvil::Contest::KnightTour;
 
