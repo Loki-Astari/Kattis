@@ -11,13 +11,17 @@ struct TestData
     std::vector<int>    input;
     int                 result;
 
-    TestData(std::istream& str)
+    TestData()
         : input(51)
+    {}
+
+    friend std::istream& operator>>(std::istream& str, TestData& data)
     {
-        for (auto& val: input) {
+        for (auto& val: data.input) {
             str >> val;
         }
-        str >> result;
+        str >> data.result;
+        return str;
     }
 };
 

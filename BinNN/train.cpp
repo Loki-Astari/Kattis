@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
+#include <iterator>
 
 using ThorsAnvil::Contest::Timer;
 using ThorsAnvil::Contest::ThreadPool;
@@ -22,10 +23,7 @@ int main()
     Timer       timer;
 
     std::ifstream           trainingData("mnist10_train.txt");
-    std::vector<TestData>   inputs;
-    for(int loop = 0; loop < 60'000; ++loop) {
-        inputs.emplace_back(trainingData);
-    }
+    std::vector<TestData>   inputs(std::istream_iterator<TestData>{trainingData}, std::istream_iterator<TestData>{});
 
     std::vector<NeuralNet>      nets;
     {
