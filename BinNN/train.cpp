@@ -25,16 +25,8 @@ int main()
     std::ifstream           trainingData("mnist10_train.txt");
     std::vector<TestData>   inputs(std::istream_iterator<TestData>{trainingData}, std::istream_iterator<TestData>{});
 
-    std::vector<NeuralNet>      nets;
-    {
-        std::ifstream           netFile("nets");
-        NeuralNet               load;
-        while(netFile >> load) {
-            nets.emplace_back(std::move(load));
-            load  = NeuralNet{};
-        }
-    }
-
+    std::ifstream           netFile("nets");
+    std::vector<NeuralNet>  nets(std::istream_iterator<NeuralNet>{netFile}, std::istream_iterator<NeuralNet>{});
     for(int loop = nets.size(); loop < 100; ++loop) {
         nets.emplace_back(generator);
     }
