@@ -1,4 +1,7 @@
 #include "contest.h"
+#include "NeuralNet.h"
+#include "TestData.h"
+
 #include <random>
 #include <vector>
 #include <algorithm>
@@ -9,196 +12,9 @@
 using ThorsAnvil::Contest::Timer;
 using ThorsAnvil::Contest::ThreadPool;
 
-class NN
-{
-        std::vector<std::vector<int>>   weights;
-        std::vector<int>                best;
-        int count;
-        int correct;
-        int countDown;
-        bool noChange;
-    public:
-        NN()
-            : weights(150, std::vector<int>(51))
-            , best(10)
-            , count(0)
-            , correct(0)
-            , countDown(99)
-            , noChange(false)
-        {
-            for(int loop = 0; loop < 10; ++loop) {
-                best[loop] = 0;
-            }
-        }
-        NN(std::default_random_engine& generator)
-            : weights(150, std::vector<int>(51))
-            , best(10)
-            , count(0)
-            , correct(0)
-            , countDown(99)
-            , noChange(false)
-        {
-            std::discrete_distribution<int> distribution { 1, 1};
 
-            for(int loop = 0; loop < 150; ++loop) {
-                for(int w = 0; w < 51; ++w) {
-                    weights[loop][w] = distribution(generator) ? -1 : 1;
-                }
-            }
-            for(int loop = 0; loop < 10; ++loop) {
-                best[loop] = 0;
-            }
-        }
-        void age()
-        {
-            noChange = true;
-            if (countDown > 0) {
-                --countDown;
-            }
-        }
-        void overwriteWith(NN const& parent, std::default_random_engine& generator, int mods)
-        {
-            count = 0;
-            correct = 0;
-            for(int loop = 0; loop < 10; ++loop) {
-                best[loop] = 0;
-            }
-            countDown = 99;
-            noChange = false;
-
-            weights = parent.weights;
-
-            //std::uniform_int_distribution  w1(0, 14);
-            std::uniform_int_distribution  w1(0, 149);
-            std::uniform_int_distribution  w2(0, 50);
-
-            //auto    min = std::min_element(std::begin(parent.best), std::end(parent.best));
-            //auto    choice = (min - std::begin(parent.best)) * 15;
-            int choice = 0;
-
-            for(int loop = 0; loop < mods; ++loop) {
-                int i1 = w1(generator);
-                int i2 = w2(generator);
-                int r  = weights[choice + i1][i2] < 0 ? 1 : -1;
-
-
-                weights[choice + i1][i2] = r;
-            }
-        }
-
-        NN(NN const&)               = default;
-        NN(NN&&)                    = default;
-        NN& operator=(NN const&)    = default;
-        NN& operator=(NN&&)         = default;
-
-        void checkNet(std::vector<int> const& input, int expected)
-        {
-            if (noChange) {
-                return;
-            }
-
-            std::vector<int>                layer1(150);
-            std::vector<int>                layer1S(150);
-            std::vector<int>                layer2(10);
-
-            // Calculate Layer 1
-            for(int layer1Loop = 0; layer1Loop < 150; ++layer1Loop) {
-                layer1[layer1Loop]  = 0;
-                for(int inLoop = 0; inLoop < 51; ++inLoop) {
-                    layer1[layer1Loop] += weights[layer1Loop][inLoop] * input[inLoop];
-                }
-            }
-            for(int layer1Loop = 0; layer1Loop < 150; ++layer1Loop) {
-                layer1S[layer1Loop] = layer1[layer1Loop] > 0 ? +1 : -1;
-            }
-
-            // Calculate Layer 2
-            for(int layer2Loop = 0; layer2Loop < 10; ++layer2Loop) {
-                layer2[layer2Loop] = 0;
-                for(int loop = 0; loop < 15; ++loop) {
-                    layer2[layer2Loop] += layer1[layer2Loop * 15 + loop];
-                }
-            }
-
-            auto maxElement    = std::max_element(std::begin(layer2), std::end(layer2));
-            int actual = maxElement - std::begin(layer2);
-
-            ++count;
-            if (actual == expected) {
-                ++best[actual];
-                ++correct;
-            }
-        }
-        void validate(int score)
-        {
-            if (count > score) {
-                std::cerr << "Error:- Reset\n";
-
-                count = 0;
-                correct = 0;
-                for(int loop = 0; loop < 10; ++loop) {
-                    best[loop] = 0;
-                }
-                countDown = 99;
-                noChange = false;
-            }
-        }
-        int getScore() const
-        {
-            return correct * 100 + countDown;;
-        }
-        std::string dispBest() const
-        {
-            std::stringstream str;
-            for(auto val: best) {
-                str << std::setw(8) << val;
-            }
-            str << "  " << std::setprecision(5) << std::setw(6) << std::left << std::setfill('0') << ((correct * 100.0) / count);
-            return str.str();
-        }
-        void print(std::ostream& str) const
-        {
-            for(int loop = 0; loop < 150; ++loop) {
-                for(int w = 0; w < 51; ++w) {
-                    str << std::setw(2) << weights[loop][w] << " ";
-                }
-                str << "\n";
-            }
-        }
-        void load(std::istream& str)
-        {
-            for(int loop = 0; loop < 150; ++loop) {
-                for(int w = 0; w < 51; ++w) {
-                    str >> weights[loop][w];
-                }
-            }
-        }
-        friend std::ostream& operator<<(std::ostream& str, NN const& data)
-        {
-            data.print(str);
-            return str;
-        }
-        friend std::istream& operator>>(std::istream& str, NN& data)
-        {
-            data.load(str);
-            return str;
-        }
-};
-
-struct Input
-{
-    std::vector<int>    input;
-    int                 result;
-
-    Input(std::istream& str)
-        : input(51)
-    {
-        for (auto& val: input) {
-            str >> val;
-        }
-        str >> result;
-    }
-};
+using ThorsAnvil::Contest::AIHandWritting::NeuralNet;
+using ThorsAnvil::Contest::AIHandWritting::TestData;
 
 int main()
 {
@@ -206,18 +22,18 @@ int main()
     Timer       timer;
 
     std::ifstream           trainingData("mnist10_train.txt");
-    std::vector<Input>      inputs;
+    std::vector<TestData>   inputs;
     for(int loop = 0; loop < 60'000; ++loop) {
         inputs.emplace_back(trainingData);
     }
 
-    std::vector<NN>         nets;
+    std::vector<NeuralNet>      nets;
     {
         std::ifstream           netFile("nets");
-        NN                      load;
+        NeuralNet               load;
         while(netFile >> load) {
             nets.emplace_back(std::move(load));
-            load  = NN{};
+            load  = NeuralNet{};
         }
     }
 
@@ -249,7 +65,7 @@ int main()
             }
             threadPool.waitForJobsToDrain();
 
-            std::sort(std::begin(nets), std::end(nets), [](NN const& lhs, NN const& rhs){return lhs.getScore() > rhs.getScore();});
+            std::sort(std::begin(nets), std::end(nets), [](NeuralNet const& lhs, NeuralNet const& rhs){return lhs.getScore() > rhs.getScore();});
 
             std::cout << "Best: " << nets[0].getScore() << nets[0].dispBest() << "\n";
             std::cout << "2nd:  " << nets[1].getScore() << nets[1].dispBest() << "\n";
