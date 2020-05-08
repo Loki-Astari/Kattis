@@ -158,13 +158,19 @@ void NeuralNetStats::validate(int score)
     }
 }
 
-std::string NeuralNetStats::dispBest() const
+void NeuralNetStats::print(std::ostream& str) const
 {
-    std::stringstream str;
+    std::ios_base::fmtflags flags   = str.flags();
+    std::streamsize         cPrec   = str.precision();
+
+    str << getScore();
     for(auto val: best) {
         str << std::setw(8) << val;
     }
-    str << "  " << std::setprecision(5) << std::setw(6) << std::left << std::setfill('0') << ((correct * 100.0) / count);
-    return str.str();
+    str << "  "
+        << std::setprecision(5) << std::setw(6) << std::left << std::setfill('0') << ((correct * 100.0) / count)
+        << std::setprecision(cPrec) << std::setfill(' ')
+        << "\n";
+    str.flags(flags);
 }
 

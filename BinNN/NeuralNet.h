@@ -2,7 +2,6 @@
 #define THORSANVIL_CONTEST_AI_HAND_WRITTING_NEURAL_NET_H
 
 #include <random>
-#include <sstream>
 #include <iomanip>
 
 namespace ThorsAnvil::Contest::AIHandWritting
@@ -50,10 +49,9 @@ class NeuralNetStats
 
         int getScore() const {return correct * 100 + countDown;}
 
-        std::string dispBest() const;
+        void print(std::ostream& str) const;
 
-        friend std::ostream& operator<<(std::ostream& str, NeuralNetStats const& data) {return str << data.getNetwork();}
-        friend std::istream& operator>>(std::istream& str, NeuralNetStats& data)       {return str >> data.getNetwork();}
+        friend std::ostream& operator<<(std::ostream& str, NeuralNetStats const& data) {data.print(str);return str;}
 };
 
 }

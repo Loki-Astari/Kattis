@@ -43,7 +43,7 @@ int main()
         }
         netStats[0].age();
         std::ofstream best("best", std::ios::app);
-        best << netStats[0].getScore() << netStats[0].dispBest() << "\n";
+        best << netStats[0];
     }
 
     ThreadPool     threadPool(4);
@@ -65,7 +65,7 @@ int main()
             }
         }
         std::ofstream best("best", std::ios::app);
-        best << netStats[0].getScore() << netStats[0].dispBest() << "\n";
+        best << netStats[0];
 
         std::ofstream   netFile("nets");
         for(auto const& net: netStats) {
@@ -105,15 +105,15 @@ void nerualNetEvolve(std::vector<NeuralNetStats>& netStats, std::default_random_
 
 void nerualNetsInfoDump(std::vector<NeuralNetStats> const& netStats)
 {
-    std::cout << "Best: " << netStats[0].getScore() << netStats[0].dispBest() << "\n";
-    std::cout << "2nd:  " << netStats[1].getScore() << netStats[1].dispBest() << "\n";
-    std::cout << "3rd:  " << netStats[2].getScore() << netStats[2].dispBest() << "\n";
-    std::cout << "4th:  " << netStats[3].getScore() << netStats[3].dispBest() << "\n";
-    std::cout << "5th:  " << netStats[4].getScore() << netStats[4].dispBest() << "\n";
-    std::cout << "25%:  " << netStats[25].getScore() << netStats[25].dispBest() << "\n";
-    std::cout << "25%:  " << netStats[25].getScore() << netStats[25].dispBest() << "\n";
-    std::cout << "50%:  " << netStats[50].getScore() << netStats[50].dispBest() << "\n";
-    std::cout << "75%:  " << netStats[75].getScore() << netStats[75].dispBest() << "\n";
-    std::cout << "99%:  " << netStats[99].getScore() << netStats[99].dispBest() << "\n";
+    std::cout << "Best: " << netStats[0];
+    std::cout << "2nd:  " << netStats[1];
+    std::cout << "3rd:  " << netStats[2];
+    std::cout << "4th:  " << netStats[3];
+    std::cout << "5th:  " << netStats[4];
+    std::cout << "25%:  " << netStats[25];
+    std::cout << "25%:  " << netStats[25];
+    std::cout << "50%:  " << netStats[50];
+    std::cout << "75%:  " << netStats[75];
+    std::cout << "99%:  " << netStats[99];
 }
 
