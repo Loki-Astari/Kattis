@@ -9,6 +9,7 @@
 #include <sstream>
 #include <thread>
 #include <iterator>
+#include <stdexcept>
 
 using ThorsAnvil::Contest::Timer;
 using ThorsAnvil::Contest::ThreadPool;
@@ -22,8 +23,33 @@ void neuralNetsRun(ThreadPool& threadPool, std::vector<NeuralNetStats>& netStats
 void nerualNetEvolve(std::vector<NeuralNetStats>& netStats, std::default_random_engine& generator);
 void nerualNetsInfoDump(std::vector<NeuralNetStats> const& netStats);
 
-int main()
+int main(int argc, char* argv[])
 {
+    bool    validate    = false;
+    int     uptrainMax  = 100;
+    int     trainMax    = 100;
+
+    std::vector<std::string>    args(argv + 1, argv + argc);
+    for(int loop = 0; loop < args.size(); ++loop) {
+        if (args[loop] == "--validate") {
+            validate = true;
+        }
+        else if (args[loop].substr(0, 13) == "--uptrainMax=") {
+            uptrainMax  = std::stoi(args[loop].substr(13));
+        }
+        else if (args[loop].substr(0, 11) == "--trainMax=") {
+            trainMax    = std::stoi(args[loop].substr(11));
+        }
+        else {
+            throw std::runtime_error("Bad Argument");
+        }
+    }
+    if (validate) {
+        uptrainMax  = 1;
+        trainMax    = 1;
+    }
+
+
     std::default_random_engine generator(time(nullptr));
     Timer       timer;
 
@@ -48,8 +74,8 @@ int main()
 
     ThreadPool     threadPool(4);
 
-    for(int uptrain = 0; uptrain < 1; ++uptrain) {
-        for(int train = 0; train < 2; ++train) {
+    for(int uptrain = 0; uptrain < uptrainMax; ++uptrain) {
+        for(int train = 0; train < trainMax; ++train) {
             Timer       time;
 
             neuralNetsRun(threadPool, netStats, inputs);
@@ -64,15 +90,22 @@ int main()
                 net.validate(inputs.size());
             }
         }
-        std::ofstream best("best", std::ios::app);
-        best << netStats[0];
+        if (!validate) {
+            std::ofstream best("best", std::ios::app);
+            best << netStats[0];
 
-        std::ofstream   netFile("nets");
-        for(auto const& net: netStats) {
-            netFile << net.getNetwork();
+            std::ofstream   netFile("nets");
+            for(auto const& net: netStats) {
+                netFile << net.getNetwork();
+            }
+        }
+        else {
+            std::ofstream   netFile("result");
+            for(auto const& net: netStats) {
+                netFile << net.getNetwork();
+            }
         }
     }
-
 }
 
 void neuralNetsRun(ThreadPool& threadPool, std::vector<NeuralNetStats>& netStats, std::vector<TestData> const& inputs)
