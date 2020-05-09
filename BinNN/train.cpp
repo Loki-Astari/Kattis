@@ -21,7 +21,7 @@ using ThorsAnvil::Contest::AIHandWritting::TestData;
 
 void neuralNetsRun(ThreadPool& threadPool, std::vector<NeuralNetStats>& netStats, std::vector<TestData> const& inputs);
 void nerualNetEvolve(std::vector<NeuralNetStats>& netStats, std::default_random_engine& generator);
-void nerualNetsInfoDump(std::vector<NeuralNetStats> const& netStats);
+void nerualNetsInfoDump(std::ostream& str, std::vector<NeuralNetStats> const& netStats);
 
 int main(int argc, char* argv[])
 {
@@ -82,7 +82,11 @@ int main(int argc, char* argv[])
 
             std::sort(std::begin(netStats), std::end(netStats), [](NeuralNetStats const& lhs, NeuralNetStats const& rhs){return lhs.getScore() > rhs.getScore();});
 
-            nerualNetsInfoDump(netStats);
+            nerualNetsInfoDump(std::cout, netStats);
+            if (validate) {
+                std::ofstream   netFile("result");
+                nerualNetsInfoDump(netFile, netStats);
+            }
 
             nerualNetEvolve(netStats, generator);
 
@@ -95,12 +99,6 @@ int main(int argc, char* argv[])
             best << netStats[0];
 
             std::ofstream   netFile("nets");
-            for(auto const& net: netStats) {
-                netFile << net.getNetwork();
-            }
-        }
-        else {
-            std::ofstream   netFile("result");
             for(auto const& net: netStats) {
                 netFile << net.getNetwork();
             }
@@ -136,17 +134,17 @@ void nerualNetEvolve(std::vector<NeuralNetStats>& netStats, std::default_random_
     }
 }
 
-void nerualNetsInfoDump(std::vector<NeuralNetStats> const& netStats)
+void nerualNetsInfoDump(std::ostream& str, std::vector<NeuralNetStats> const& netStats)
 {
-    std::cout << "Best: " << netStats[0];
-    std::cout << "2nd:  " << netStats[1];
-    std::cout << "3rd:  " << netStats[2];
-    std::cout << "4th:  " << netStats[3];
-    std::cout << "5th:  " << netStats[4];
-    std::cout << "25%:  " << netStats[25];
-    std::cout << "25%:  " << netStats[25];
-    std::cout << "50%:  " << netStats[50];
-    std::cout << "75%:  " << netStats[75];
-    std::cout << "99%:  " << netStats[99];
+    str << "Best: " << netStats[0];
+    str << "2nd:  " << netStats[1];
+    str << "3rd:  " << netStats[2];
+    str << "4th:  " << netStats[3];
+    str << "5th:  " << netStats[4];
+    str << "25%:  " << netStats[25];
+    str << "25%:  " << netStats[25];
+    str << "50%:  " << netStats[50];
+    str << "75%:  " << netStats[75];
+    str << "99%:  " << netStats[99];
 }
 
