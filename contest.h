@@ -134,7 +134,7 @@ class ThreadPool
         {
             std::unique_lock<std::mutex>   lock(mutex);
 
-            for(int loop = 0; loop < 4; ++loop) {
+            for(int loop = 0; loop < size; ++loop) {
                 threads.emplace_back([&](){threadAction();});
             }
         }
