@@ -41,7 +41,7 @@ void NeuralNet::overwriteWith(NeuralNet const& parent, std::default_random_engin
     }
 }
 
-std::vector<int> NeuralNet::runNetwork(std::vector<int> const& input, int expected)
+std::vector<int> NeuralNet::runNetwork(std::vector<int> const& input)
 {
     std::vector<int>                layer1(150);
     std::vector<int>                layer1S(150);
@@ -134,7 +134,7 @@ void NeuralNetStats::checkNet(std::vector<int> const& input, int expected)
         return;
     }
 
-    std::vector<int> output = network->runNetwork(input, expected);
+    std::vector<int> output = network->runNetwork(input);
 
     ++count;
     if (output[0] == expected) {

@@ -20,7 +20,7 @@ class NeuralNet
         NeuralNet& operator=(NeuralNet&&)         = default;
 
         void overwriteWith(NeuralNet const& parent, std::default_random_engine& generator, int mods);
-        std::vector<int> runNetwork(std::vector<int> const& input, int expected);
+        std::vector<int> runNetwork(std::vector<int> const& input);
 
         void print(std::ostream& str) const;
         void load(std::istream& str);
