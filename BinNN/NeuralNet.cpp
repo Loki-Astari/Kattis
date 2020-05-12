@@ -63,7 +63,7 @@ std::vector<int> NeuralNet::runNetwork(std::vector<int> const& input, int expect
     for(int layer2Loop = 0; layer2Loop < 10; ++layer2Loop) {
         layer2[layer2Loop] = 0;
         for(int loop = 0; loop < 15; ++loop) {
-            layer2[layer2Loop] += layer1[layer2Loop * 15 + loop];
+            layer2[layer2Loop] += layer1S[layer2Loop * 15 + loop];
         }
     }
 
