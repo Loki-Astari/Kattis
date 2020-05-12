@@ -1,73 +1,66 @@
 #include "NeuralNet.h"
 #include <iostream>
+#include <thread>
 
 using namespace ThorsAnvil::Contest::AIHandWritting;
 
 NeuralNet::NeuralNet()
-    : weights(150, std::vector<int>(51))
+    : NeuralNetGeneric({51, 150, 10},
+        {
+            [](int x){return x > 0 ? 1 : -1;},
+            [](int x){return x;}
+        },
+        [](int layer, int node, int inputNode) {
+            switch(layer) {
+                case 0: return 1;
+                case 1: return (inputNode / 15 == node) ? 1 : 0;
+            }
+            return 0;
+        }
+    )
 {}
 
 NeuralNet::NeuralNet(std::default_random_engine& generator)
-    : weights(150, std::vector<int>(51))
-{
-    std::discrete_distribution<int> distribution { 1, 1};
-
-    for(int loop = 0; loop < 150; ++loop) {
-        for(int w = 0; w < 51; ++w) {
-            weights[loop][w] = distribution(generator) ? -1 : 1;
+    : NeuralNetGeneric({51, 150, 10},
+        {
+            [](int x){return x > 0 ? 1 : -1;},
+            [](int x){return x;}
+        },
+        [distribution = std::discrete_distribution<int>{ 1, 1}, &generator](int layer, int node, int inputNode) mutable {
+            switch(layer) {
+                case 0: return distribution(generator) ? -1 : 1;
+                case 1: return (inputNode / 15 == node) ? 1 : 0;
+            }
+            return 0;
         }
-    }
-}
+    )
+{}
 
 void NeuralNet::overwriteWith(NeuralNet const& parent, std::default_random_engine& generator, int mods)
 {
     weights = parent.weights;
 
-    //std::uniform_int_distribution  w1(0, 14);
     std::uniform_int_distribution  w1(0, 149);
     std::uniform_int_distribution  w2(0, 50);
 
-    //auto    min = std::min_element(std::begin(parent.best), std::end(parent.best));
-    //auto    choice = (min - std::begin(parent.best)) * 15;
     int choice = 0;
 
     for(int loop = 0; loop < mods; ++loop) {
         int i1 = w1(generator);
         int i2 = w2(generator);
-        int r  = weights[choice + i1][i2] < 0 ? 1 : -1;
+        int r  = weights[0][choice + i1][i2] < 0 ? 1 : -1;
 
 
-        weights[choice + i1][i2] = r;
+        weights[0][choice + i1][i2] = r;
     }
 }
 
 std::vector<int> NeuralNet::runNetwork(std::vector<int> const& input)
 {
-    std::vector<int>                layer1(150);
-    std::vector<int>                layer1S(150);
-    std::vector<int>                layer2(10);
-    std::vector<int>                layer3(1);
-
-    // Calculate Layer 1
-    for(int layer1Loop = 0; layer1Loop < 150; ++layer1Loop) {
-        layer1[layer1Loop]  = 0;
-        for(int inLoop = 0; inLoop < 51; ++inLoop) {
-            layer1[layer1Loop] += weights[layer1Loop][inLoop] * input[inLoop];
-        }
-    }
-    for(int layer1Loop = 0; layer1Loop < 150; ++layer1Loop) {
-        layer1S[layer1Loop] = layer1[layer1Loop] > 0 ? +1 : -1;
-    }
-
-    // Calculate Layer 2
-    for(int layer2Loop = 0; layer2Loop < 10; ++layer2Loop) {
-        layer2[layer2Loop] = 0;
-        for(int loop = 0; loop < 15; ++loop) {
-            layer2[layer2Loop] += layer1S[layer2Loop * 15 + loop];
-        }
-    }
-
+    std::vector<int> layer2 = NeuralNetGeneric::runNetwork(input);
     auto maxElement    = std::max_element(std::begin(layer2), std::end(layer2));
+
+    std::vector<int>                layer3(1);
     layer3[0] = maxElement - std::begin(layer2);
 
     return layer3;
@@ -77,7 +70,7 @@ void NeuralNet::print(std::ostream& str) const
 {
     for(int loop = 0; loop < 150; ++loop) {
         for(int w = 0; w < 51; ++w) {
-            str << std::setw(2) << weights[loop][w] << " ";
+            str << std::setw(2) << weights[0][loop][w] << " ";
         }
         str << "\n";
     }
@@ -87,7 +80,7 @@ void NeuralNet::load(std::istream& str)
 {
     for(int loop = 0; loop < 150; ++loop) {
         for(int w = 0; w < 51; ++w) {
-            str >> weights[loop][w];
+            str >> weights[0][loop][w];
         }
     }
 }
