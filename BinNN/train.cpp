@@ -80,28 +80,31 @@ int main(int argc, char* argv[])
 
             neuralNetsRun(threadPool, netStats, inputs);
 
-            std::sort(std::begin(netStats), std::end(netStats), [](NeuralNetStats const& lhs, NeuralNetStats const& rhs){return lhs.getScore() > rhs.getScore();});
 
             nerualNetsInfoDump(std::cout, netStats);
             if (validate) {
+                std::vector<NeuralNetStats> netStatsCopy(netStats);
+                std::sort(std::begin(netStatsCopy), std::end(netStatsCopy), [](NeuralNetStats const& lhs, NeuralNetStats const& rhs){return lhs.getScore() > rhs.getScore();});
                 std::ofstream   netFile("result");
-                nerualNetsInfoDump(netFile, netStats);
+                nerualNetsInfoDump(netFile, netStatsCopy);
             }
+            else {
+                std::sort(std::begin(netStats), std::end(netStats), [](NeuralNetStats const& lhs, NeuralNetStats const& rhs){return lhs.getScore() > rhs.getScore();});
+                nerualNetEvolve(netStats, generator);
 
-            nerualNetEvolve(netStats, generator);
-
-            for(auto& net: netStats) {
-                net.validate(inputs.size());
+                for(auto& net: netStats) {
+                    net.validate(inputs.size());
+                }
             }
         }
         if (!validate) {
             std::ofstream best("best", std::ios::app);
             best << netStats[0];
+        }
 
-            std::ofstream   netFile("nets");
-            for(auto const& net: netStats) {
-                netFile << net.getNetwork();
-            }
+        std::ofstream   netFile("nets");
+        for(auto const& net: netStats) {
+            netFile << net.getNetwork();
         }
     }
 }
