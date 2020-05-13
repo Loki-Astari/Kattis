@@ -7,6 +7,85 @@ using namespace ThorsAnvil::Contest::AIHandWritting;
 
 // NeuralNetGeneric
 
+NeuralNetGeneric::NeuralNetGeneric(std::vector<int>&& pLayerSize)
+    : NeuralNetGeneric( std::move(pLayerSize),
+                        std::vector<std::function<int(int)>>(pLayerSize.size(), [](int x){
+                            return x;}),
+                        [](int,int,int){return 1;}
+                      )
+{}
+
+NeuralNetGeneric::NeuralNetGeneric(std::vector<int>&& pLayerSize, std::function<int(int, int, int)>&& generator)
+    : NeuralNetGeneric( std::move(pLayerSize),
+                        std::vector<std::function<int(int)>>(pLayerSize.size(), [](int x){
+                            return x;}),
+                        std::move(generator)
+                      )
+{}
+
+NeuralNetGeneric::NeuralNetGeneric(std::vector<int>&& pLayerSize, std::vector<std::function<int(int)>>&& sumarise, std::function<int(int, int, int)>&& generator)
+    : layerSize(std::move(pLayerSize))
+    , sumarise(std::move(sumarise))
+{
+    auto loop   = std::begin(layerSize);
+    auto end    = std::end(layerSize);
+
+    int currentLayerSize    = *loop;
+    int inputLayer          = 0;
+    for (++loop;loop != end; ++loop) {
+
+        // Calculate the number of weights we need
+        int nextLayerSize = *loop;
+        weights.emplace_back(nextLayerSize, std::vector<int>(currentLayerSize));
+
+        for(int layer1Loop = 0; layer1Loop < weights[inputLayer].size(); ++layer1Loop) {
+            for(int inLoop = 0; inLoop < weights[inputLayer][layer1Loop].size(); ++inLoop) {
+                weights.back()[layer1Loop][inLoop] = generator(inputLayer, layer1Loop, inLoop);
+            }
+        }
+        // Set up for next loop.
+        currentLayerSize = nextLayerSize;
+        ++inputLayer;
+    }
+}
+
+std::vector<int> NeuralNetGeneric::runNetwork(std::vector<int> const& inputParam)
+{
+    std::vector<int>    input(inputParam);
+
+    auto loop   = std::begin(layerSize);
+    auto end    = std::end(layerSize);
+
+    int currentLayerSize    = *loop;
+    int inputLayer          = 0;
+    for (++loop;loop != end; ++loop) {
+        int nextLayerSize = *loop;
+
+        std::vector<int>    output(nextLayerSize);
+        runNetworkLayer(input, output, inputLayer);
+
+        // Get ready for next layer
+        currentLayerSize = nextLayerSize;
+        ++inputLayer;
+        input = std::move(output);
+    }
+    return input;
+}
+
+void NeuralNetGeneric::runNetworkLayer(std::vector<int> const& input, std::vector<int>& output, int layer)
+{
+    for(int layer1Loop = 0; layer1Loop < weights[layer].size(); ++layer1Loop) {
+        output[layer1Loop]  = 0;
+        for(int inLoop = 0; inLoop < weights[layer][layer1Loop].size(); ++inLoop) {
+            output[layer1Loop] += weights[layer][layer1Loop][inLoop] * input[inLoop];
+        }
+    }
+
+    for(int layer1Loop = 0; layer1Loop < weights[layer].size(); ++layer1Loop) {
+        output[layer1Loop]  = sumarise[layer](output[layer1Loop]);
+    }
+}
+
 void NeuralNetGeneric::print(std::ostream& str) const
 {
     for(int layer = 0; layer < weights.size(); ++layer) {
