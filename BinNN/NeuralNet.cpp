@@ -4,6 +4,24 @@
 
 using namespace ThorsAnvil::Contest::AIHandWritting;
 
+// NeuralNetGeneric
+
+void NeuralNetGeneric::print(std::ostream& str) const
+{
+    for(int layer = 0; layer < weights.size(); ++layer) {
+        for(int loop = 0; loop < weights[layer].size(); ++loop) {
+            for(int w = 0; w < weights[layer][loop].size(); ++w) {
+                str << std::setw(2) << weights[layer][loop][w] << " ";
+            }
+            str << "\n";
+        }
+    }
+}
+
+
+
+// NeuralNet
+
 NeuralNet::NeuralNet()
     : NeuralNetGeneric({51, 150, 10},
         {
@@ -64,16 +82,6 @@ std::vector<int> NeuralNet::runNetwork(std::vector<int> const& input)
     layer3[0] = maxElement - std::begin(layer2);
 
     return layer3;
-}
-
-void NeuralNet::print(std::ostream& str) const
-{
-    for(int loop = 0; loop < 150; ++loop) {
-        for(int w = 0; w < 51; ++w) {
-            str << std::setw(2) << weights[0][loop][w] << " ";
-        }
-        str << "\n";
-    }
 }
 
 void NeuralNet::load(std::istream& str)

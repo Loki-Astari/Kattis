@@ -87,6 +87,8 @@ class NeuralNetGeneric
                 output[layer1Loop]  = sumarise[layer](output[layer1Loop]);
             }
         }
+        void print(std::ostream& str) const;
+        friend std::ostream& operator<<(std::ostream& str, NeuralNetGeneric const& data) {data.print(str);return str;}
 };
 
 class NeuralNet: public NeuralNetGeneric
@@ -103,10 +105,8 @@ class NeuralNet: public NeuralNetGeneric
         void overwriteWith(NeuralNet const& parent, std::default_random_engine& generator, int mods);
         virtual std::vector<int> runNetwork(std::vector<int> const& input) override;
 
-        void print(std::ostream& str) const;
         void load(std::istream& str);
 
-        friend std::ostream& operator<<(std::ostream& str, NeuralNet const& data) {data.print(str);return str;}
         friend std::istream& operator>>(std::istream& str, NeuralNet& data)       {data.load(str);return str;}
 };
 
