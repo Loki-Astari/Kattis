@@ -1,5 +1,6 @@
 #include "NeuralNet.h"
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 using namespace ThorsAnvil::Contest::AIHandWritting;
@@ -14,6 +15,25 @@ void NeuralNetGeneric::print(std::ostream& str) const
                 str << std::setw(2) << weights[layer][loop][w] << " ";
             }
             str << "\n";
+        }
+    }
+}
+
+void NeuralNetGeneric::load(std::istream& str)
+{
+    for(int layer = 0; layer < weights.size(); ++layer) {
+        for(int loop = 0; loop < weights[layer].size(); ++loop) {
+            std::string line;
+            if (std::getline(str, line)) {
+
+                std::stringstream   lineStream(line);
+                for(int w = 0; w < weights[layer][loop].size(); ++w) {
+                    if (!(lineStream >> weights[layer][loop][w])) {
+                        str.setstate(lineStream.rdstate());
+                        return;
+                    }
+                }
+            }
         }
     }
 }
@@ -82,15 +102,6 @@ std::vector<int> NeuralNet::runNetwork(std::vector<int> const& input)
     layer3[0] = maxElement - std::begin(layer2);
 
     return layer3;
-}
-
-void NeuralNet::load(std::istream& str)
-{
-    for(int loop = 0; loop < 150; ++loop) {
-        for(int w = 0; w < 51; ++w) {
-            str >> weights[0][loop][w];
-        }
-    }
 }
 
 // Stats

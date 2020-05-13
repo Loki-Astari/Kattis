@@ -16,6 +16,13 @@ class NeuralNetGeneric
         std::vector<std::function<int(int)>>        sumarise;
         std::vector<std::vector<std::vector<int>>>  weights;
     public:
+        NeuralNetGeneric(std::vector<int>&& pLayerSize)
+            : NeuralNetGeneric( std::move(pLayerSize),
+                                std::vector<std::function<int(int)>>(pLayerSize.size(), [](int x){
+                                    return x;}),
+                                [](int,int,int){return 1;}
+                              )
+        {}
         template<typename F>
         NeuralNetGeneric(std::vector<int>&& pLayerSize, F&& generator)
             : NeuralNetGeneric( std::move(pLayerSize),
@@ -88,7 +95,18 @@ class NeuralNetGeneric
             }
         }
         void print(std::ostream& str) const;
+        void load(std::istream& str);
+
         friend std::ostream& operator<<(std::ostream& str, NeuralNetGeneric const& data) {data.print(str);return str;}
+        friend std::istream& operator>>(std::istream& str, NeuralNetGeneric& data)
+        {
+            NeuralNetGeneric    tmp(std::vector<int>(data.layerSize));
+            tmp.load(str);
+            if (str) {
+                std::swap(data.weights, tmp.weights);
+            }
+            return str;
+        }
 };
 
 class NeuralNet: public NeuralNetGeneric
@@ -104,10 +122,6 @@ class NeuralNet: public NeuralNetGeneric
 
         void overwriteWith(NeuralNet const& parent, std::default_random_engine& generator, int mods);
         virtual std::vector<int> runNetwork(std::vector<int> const& input) override;
-
-        void load(std::istream& str);
-
-        friend std::istream& operator>>(std::istream& str, NeuralNet& data)       {data.load(str);return str;}
 };
 
 class NeuralNetStats
